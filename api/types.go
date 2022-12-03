@@ -1,23 +1,31 @@
 package api
 
-import "net/http"
+import (
+	"net/http"
 
-type coins struct {
+	"github.com/conghaile/coincrowd-API/db"
+)
+
+type coinsResponse struct {
 	Coins []string `json:"coins"`
 }
 
-type coinData struct {
+type coinDataResponse struct {
 	Time   int    `json:"time"`
-	Coin   string `json:"coin"`
 	Source string `json:"source"`
 }
 
-type coinDataList struct {
-	Coins []coinData
+type coinDataListResponse struct {
+	Coins []coinDataResponse
+}
+
+type timeFrame struct {
+	Weeks int64
 }
 
 type APIServer struct {
 	listenAddr string
+	store      db.Storage
 }
 
 type APIError struct {
