@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/conghaile/coincrowd-API/db"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 const weekSeconds int64 = 604800
@@ -24,12 +26,16 @@ func (s *APIServer) Run() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/all", makeHTTPHandlerFunc(s.CoinsHandler))
-	router.HandleFunc("/coindata/{coin}", makeHTTPHandlerFunc(s.CoinDataHandler))
+	router.HandleFunc("/coindata/{coin}/{weeks}", makeHTTPHandlerFunc(s.CoinDataHandler))
 	router.HandleFunc("/sourcedata/{source}", makeHTTPHandlerFunc(s.SourceHandler))
 
-	log.Println("Server running at port", s.listenAddr)
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowCredentials: true,
+	})
 
-	http.ListenAndServe(s.listenAddr, router)
+	handler := c.Handler(router)
+	log.Fatal(http.ListenAndServe(s.listenAddr, handler))
 }
 
 // Endpoint that returns JSON of all coins on record to frontend
@@ -57,13 +63,14 @@ func (s *APIServer) CoinsHandler(w http.ResponseWriter, r *http.Request) error {
 func (s *APIServer) CoinDataHandler(w http.ResponseWriter, r *http.Request) error {
 	if r.Method == "GET" {
 		coin := mux.Vars(r)["coin"]
-		var timeframe timeFrame
-		err := json.NewDecoder(r.Body).Decode(&timeframe)
+		fmt.Println(mux.Vars(r))
+		timeString := mux.Vars(r)["weeks"]
+		weeks, err := strconv.ParseInt(timeString, 10, 64)
 		if err != nil {
-			return err
+			panic(err)
 		}
 
-		timeframeSeconds := (time.Now().UnixMilli() / 1000) - (timeframe.Weeks * weekSeconds)
+		timeframeSeconds := (time.Now().UnixMilli() / 1000) - (weeks * weekSeconds)
 
 		coinData, err := s.store.GetCoinData(coin, timeframeSeconds)
 		if err != nil {

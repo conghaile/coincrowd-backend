@@ -62,7 +62,9 @@ func (s *PostgresStore) GetCoinData(coin string, timeframe int64) (*CoinDataList
 		err := rows.Scan(&coinData.Time, &coinData.Source)
 		if err != nil {
 			return nil, err
+
 		}
+
 		coinDataList.Coins = append(coinDataList.Coins, coinData)
 	}
 
